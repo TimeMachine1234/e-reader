@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option java_package = "com.pageturn.proto";
+option java_multiple_files = true;
+option java_outer_classname = "ReaderSettingsProto";
+
+message ReaderSettings {
+  string font_family = 1;
+  float font_size_sp = 2;
+  float line_spacing = 3;
+  float letter_spacing = 4;
+  float paragraph_spacing = 5;
+  bool justify_text = 6;
+  bool bold_text = 7;
+  int32 horizontal_margin_dp = 8;
+  int32 vertical_padding_dp = 9;
+  int32 columns = 10;
+  bool paginate_mode = 11;
+  string page_turn_animation = 12;
+  string theme = 13;
+  string custom_bg_color = 14;
+  string custom_text_color = 15;
+  int32 brightness = 16;
+  bool show_progress_bar = 17;
+  bool show_chapter_progress = 18;
+  bool show_time_remaining = 19;
+  bool keep_screen_awake = 20;
+  bool volume_button_page_turn = 21;
+  string tap_zone_layout = 22;
+}

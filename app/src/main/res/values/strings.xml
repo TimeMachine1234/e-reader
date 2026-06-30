@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App name -->
+    <string name="app_name">PageTurn</string>
+
+    <!-- Library -->
+    <string name="library_title">Your Library</string>
+    <string name="library_search_hint">Search books…</string>
+    <string name="library_sort_by">Sort by</string>
+    <string name="library_filter">Filter</string>
+    <string name="library_empty_title">No books yet</string>
+    <string name="library_empty_subtitle">Import your first book</string>
+    <string name="library_import_book">Import Book</string>
+
+    <!-- Sort options -->
+    <string name="sort_recently_opened">Recently Opened</string>
+    <string name="sort_title_az">Title A–Z</string>
+    <string name="sort_author">Author</string>
+    <string name="sort_date_added">Date Added</string>
+    <string name="sort_reading_progress">Reading Progress</string>
+
+    <!-- Filter: format -->
+    <string name="filter_all_formats">All Formats</string>
+    <string name="filter_epub">EPUB</string>
+    <string name="filter_pdf">PDF</string>
+    <string name="filter_plain_text">Plain Text</string>
+    <string name="filter_cbz">Comic (CBZ)</string>
+    <string name="filter_cbr">Comic (CBR)</string>
+
+    <!-- Filter: status -->
+    <string name="filter_all_books">All Books</string>
+    <string name="filter_unread">Unread</string>
+    <string name="filter_in_progress">In Progress</string>
+    <string name="filter_finished">Finished</string>
+    <string name="filter_favorites">Favorites</string>
+
+    <!-- Book status -->
+    <string name="book_status_new">New</string>
+
+    <!-- Book actions -->
+    <string name="book_action_add_to_collection">Add to Collection</string>
+    <string name="book_action_mark_favorite">Mark as Favorite</string>
+    <string name="book_action_remove_favorite">Remove from Favorites</string>
+    <string name="book_action_mark_finished">Mark as Finished</string>
+    <string name="book_action_mark_unread">Mark as Unread</string>
+    <string name="book_action_delete">Delete Book</string>
+    <string name="book_added">Book added</string>
+    <string name="book_removed_undo">Book removed. Undo</string>
+
+    <!-- Progress / metadata -->
+    <string name="progress_percent">%1$d%% complete</string>
+    <string name="book_by_author">by %1$s</string>
+
+    <!-- Reader: navigation -->
+    <string name="reader_back">Back</string>
+    <string name="reader_search">Search in book</string>
+    <string name="reader_bookmarks">Bookmarks</string>
+    <string name="reader_toc">Table of Contents</string>
+    <string name="reader_settings">Settings</string>
+    <string name="reader_previous_page">Previous page</string>
+    <string name="reader_next_page">Next page</string>
+    <string name="reader_chapter_progress">Chapter %1$d of %2$d</string>
+    <string name="reader_percent_read">%1$d%% read</string>
+    <string name="reader_time_remaining">~%1$d min left</string>
+    <string name="reader_page_progress">Page %1$d of %2$d</string>
+
+    <!-- Highlights -->
+    <string name="highlight_add_note">Add Note</string>
+    <string name="highlight_copy_text">Copy text</string>
+    <string name="highlight_share">Share</string>
+    <string name="highlight_delete">Delete highlight</string>
+    <string name="highlight_color_yellow">Yellow</string>
+    <string name="highlight_color_green">Green</string>
+    <string name="highlight_color_pink">Pink</string>
+    <string name="highlight_color_blue">Blue</string>
+    <string name="highlights_title">Highlights</string>
+    <string name="highlights_empty">No highlights yet</string>
+
+    <!-- Bookmarks -->
+    <string name="bookmark_add">Add bookmark</string>
+    <string name="bookmarks_title">Bookmarks</string>
+    <string name="bookmarks_empty">No bookmarks yet</string>
+    <string name="bookmark_label_hint">Bookmark label (optional)</string>
+
+    <!-- Table of Contents -->
+    <string name="toc_title">Table of Contents</string>
+    <string name="toc_jump_to_chapter">Jump to chapter</string>
+
+    <!-- Reader settings headers -->
+    <string name="settings_header_typography">Typography</string>
+    <string name="settings_header_layout">Layout</string>
+    <string name="settings_header_appearance">Appearance</string>
+    <string name="settings_header_reading_aids">Reading Aids</string>
+    <string name="settings_reset_defaults">Reset to Defaults</string>
+
+    <!-- Typography -->
+    <string name="typography_font_family">Font Family</string>
+    <string name="typography_font_size">Font Size</string>
+    <string name="typography_line_spacing">Line Spacing</string>
+    <string name="typography_letter_spacing">Letter Spacing</string>
+    <string name="typography_paragraph_spacing">Paragraph Spacing</string>
+    <string name="typography_justify_text">Justify Text</string>
+    <string name="typography_bold_text">Bold Text</string>
+
+    <!-- Font names -->
+    <string name="font_georgia">Georgia</string>
+    <string name="font_palatino">Palatino</string>
+    <string name="font_open_dyslexic">OpenDyslexic</string>
+    <string name="font_lato">Lato</string>
+    <string name="font_merriweather">Merriweather</string>
+    <string name="font_eb_garamond">EB Garamond</string>
+    <string name="font_system_default">System Default</string>
+
+    <!-- Layout -->
+    <string name="layout_margins">Margins</string>
+    <string name="layout_padding">Padding</string>
+    <string name="layout_columns">Columns</string>
+    <string name="layout_one_column">One Column</string>
+    <string name="layout_two_columns">Two Columns</string>
+    <string name="layout_paginate">Paginate</string>
+    <string name="layout_scroll">Scroll</string>
+    <string name="layout_page_turn_animation">Page Turn Animation</string>
+    <string name="layout_animation_slide">Slide</string>
+    <string name="layout_animation_curl">Curl</string>
+    <string name="layout_animation_fade">Fade</string>
+    <string name="layout_animation_none">None</string>
+
+    <!-- Appearance -->
+    <string name="appearance_theme">Theme</string>
+    <string name="appearance_custom_background">Custom Background</string>
+    <string name="appearance_custom_text_color">Custom Text Color</string>
+    <string name="appearance_brightness">Brightness</string>
+    <string name="appearance_system_default">System Default</string>
+
+    <!-- Theme names -->
+    <string name="theme_light">Light</string>
+    <string name="theme_sepia">Sepia</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_amoled">AMOLED</string>
+    <string name="theme_forest">Forest</string>
+    <string name="theme_ocean">Ocean</string>
+    <string name="theme_warm_gray">Warm Gray</string>
+
+    <!-- Reading aids -->
+    <string name="reading_aids_show_progress_bar">Show Progress Bar</string>
+    <string name="reading_aids_show_chapter_progress">Show Chapter Progress</string>
+    <string name="reading_aids_show_time_remaining">Show Time Remaining</string>
+    <string name="reading_aids_keep_screen_awake">Keep Screen Awake</string>
+    <string name="reading_aids_volume_button_page_turn">Volume Button Page Turn</string>
+    <string name="reading_aids_tap_zone_layout">Tap Zone Layout</string>
+    <string name="reading_aids_tap_zone_sides">Sides</string>
+    <string name="reading_aids_tap_zone_thirds">Thirds</string>
+
+    <!-- Collections -->
+    <string name="collections_title">Collections</string>
+    <string name="collections_new">New Collection</string>
+    <string name="collections_name_hint">Collection name</string>
+    <string name="collections_emoji_hint">Choose an emoji (optional)</string>
+    <string name="collections_add_to">Add to Collection</string>
+    <string name="collections_remove_from">Remove from Collection</string>
+    <string name="collections_delete">Delete Collection</string>
+    <string name="collections_empty_title">No collections yet</string>
+    <string name="collections_empty_subtitle">Create your first collection</string>
+    <string name="collections_books_in">Books in %1$s</string>
+    <string name="collections_book_count">%1$d books</string>
+    <string name="collections_no_books">No books in this collection</string>
+    <string name="collections_delete_confirm_message">Are you sure you want to delete \"%1$s\"? The books inside will not be removed.</string>
+
+    <!-- App settings screen -->
+    <string name="app_settings_title">App Settings</string>
+    <string name="app_settings_default_reader">Default Reader Settings</string>
+    <string name="app_settings_storage">Storage</string>
+    <string name="app_settings_storage_summary">%1$d books · %2$s used</string>
+    <string name="app_settings_clear_cache">Clear Cache</string>
+    <string name="app_settings_cache_cleared">Cache cleared</string>
+    <string name="app_settings_clear_cache_confirm_message">This will clear cached images and temporary files. Your books will not be affected.</string>
+    <string name="app_settings_export_library">Export Library</string>
+    <string name="app_settings_import_library">Import Library</string>
+    <string name="app_settings_library_backup">Library Backup</string>
+    <string name="app_settings_about">About</string>
+    <string name="app_settings_version">Version %1$s</string>
+    <string name="app_settings_open_source_licenses">Open Source Licenses</string>
+    <string name="app_settings_view_on_github">View on GitHub</string>
+    <string name="app_settings_report_bug">Report a Bug</string>
+    <string name="app_settings_more_settings_hint">Open any book to access full reader settings</string>
+    <string name="app_settings_licenses_content">PageTurn uses the following open source libraries:\n\n• Jetpack Compose (Apache 2.0)\n• Hilt (Apache 2.0)\n• Room (Apache 2.0)\n• Coil (Apache 2.0)\n• DataStore (Apache 2.0)\n• Protocol Buffers (BSD-3-Clause)\n• Kotlinx Serialization (Apache 2.0)\n• Navigation Compose (Apache 2.0)\n\nFull license texts are available in the source repository.</string>
+
+    <!-- Import -->
+    <string name="import_book">Import Book</string>
+    <string name="import_in_progress">Importing…</string>
+    <string name="import_success">Book added successfully!</string>
+    <string name="import_duplicate_title">Duplicate book detected</string>
+    <string name="import_duplicate_message">A book with this name already exists. Replace it?</string>
+    <string name="import_duplicate_replace">Replace</string>
+    <string name="import_duplicate_keep_both">Keep Both</string>
+
+    <!-- Common actions -->
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_save">Save</string>
+    <string name="action_done">Done</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_close">Close</string>
+    <string name="action_search">Search</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_share">Share</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_add">Add</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_yes">Yes</string>
+    <string name="action_no">No</string>
+    <string name="action_retry">Retry</string>
+
+    <!-- Common states -->
+    <string name="state_error">Error</string>
+    <string name="state_loading">Loading…</string>
+
+    <!-- In-book search -->
+    <string name="search_in_book">Search inside book</string>
+    <string name="search_no_results">No results for \"%1$s\"</string>
+    <string name="search_found_in_chapter">Found in chapter: %1$s</string>
+    <string name="search_page">Page %1$d</string>
+
+    <!-- Zoom -->
+    <string name="zoom_fit_width">Fit width</string>
+    <string name="zoom_fit_page">Fit page</string>
+    <string name="zoom_in">Zoom in</string>
+    <string name="zoom_out">Zoom out</string>
+</resources>

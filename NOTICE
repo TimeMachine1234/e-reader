@@ -1,0 +1,164 @@
+PageTurn
+Copyright 2024 PageTurn Contributors
+
+This product includes software developed by third parties. The following is a
+list of third-party components and their respective licenses.
+
+================================================================================
+epublib-core 3.1
+https://github.com/psiegman/epublib
+Copyright (c) Paul Siegmann and contributors
+License: GNU Lesser General Public License, Version 2.1
+https://www.gnu.org/licenses/lgpl-2.1.html
+================================================================================
+
+================================================================================
+junrar 7.5.5
+https://github.com/junrar/junrar
+Copyright (c) junrar contributors
+License: UnRar License
+https://github.com/junrar/junrar/blob/master/LICENSE
+Note: The UnRar source code may be used in any software to handle RAR archives
+without limitations, but the UnRar code may not be re-used to re-create the
+RAR compression algorithm — RAR archives may only be extracted, not created.
+================================================================================
+
+================================================================================
+Android Jetpack Libraries
+https://developer.android.com/jetpack
+Copyright (c) The Android Open Source Project
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+Included Jetpack components:
+  - androidx.compose (Compose BOM 2024.05.00)
+  - androidx.room:room-runtime / room-ktx (2.6.1)
+  - androidx.datastore:datastore (1.1.1)
+  - androidx.navigation:navigation-compose (2.7.7)
+  - androidx.lifecycle:lifecycle-viewmodel-compose (2.7.0)
+  - androidx.lifecycle:lifecycle-runtime-compose (2.7.0)
+  - androidx.activity:activity-compose (1.9.0)
+  - androidx.hilt:hilt-navigation-compose (1.2.0)
+================================================================================
+
+================================================================================
+Dagger / Hilt 2.51.1
+https://dagger.dev/hilt/
+Copyright (c) The Dagger Authors (Google LLC)
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+================================================================================
+
+================================================================================
+Kotlin 1.9.23
+https://kotlinlang.org
+Copyright (c) JetBrains s.r.o. and Kotlin Programming Language contributors
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+================================================================================
+
+================================================================================
+Coil 3.0.0
+https://coil-kt.github.io/coil/
+Copyright (c) 2024 Coil Contributors
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+================================================================================
+
+================================================================================
+Protocol Buffers (protobuf-javalite) 3.25.1
+https://protobuf.dev
+Copyright (c) Google LLC
+License: BSD 3-Clause License
+https://github.com/protocolbuffers/protobuf/blob/main/LICENSE
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of Google LLC nor the names of its contributors may be
+   used to endorse or promote products derived from this software without
+   specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+================================================================================
+
+================================================================================
+Kotlin Coroutines 1.8.0
+https://github.com/Kotlin/kotlinx.coroutines
+Copyright (c) 2018 JetBrains s.r.o. and respective authors and developers
+License: Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+================================================================================
+
+                                Apache License
+                           Version 2.0, January 2004
+                        https://www.apache.org/licenses/
+
+Full text of the Apache License, Version 2.0 is available at:
+https://www.apache.org/licenses/LICENSE-2.0
+
+Full text of the GNU Lesser General Public License 2.1 is available at:
+https://www.gnu.org/licenses/lgpl-2.1.html
+
+================================================================================
+Font Attributions
+================================================================================
+
+The following fonts are bundled under the SIL Open Font License, Version 1.1
+(https://scripts.sil.org/OFL).
+
+--------------------------------------------------------------------------------
+Georgia.ttf — Libre Baskerville Regular (open-source substitute for Georgia)
+https://github.com/impallari/Libre-Baskerville
+Copyright 2012 The Libre Baskerville Project Authors (https://github.com/impallari/Libre-Baskerville)
+License: SIL Open Font License, Version 1.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Palatino.ttf — Cardo Regular (open-source substitute for Palatino)
+https://github.com/google/fonts/tree/main/ofl/cardo
+Copyright 2011 David J. Perry (https://scholarsfonts.net/cardofnt.html)
+License: SIL Open Font License, Version 1.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Lato-Regular.ttf — Lato Regular
+https://www.latofonts.com
+Copyright 2010-2014 Łukasz Dziedzic (http://www.latofonts.com)
+License: SIL Open Font License, Version 1.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Merriweather-Regular.ttf — Merriweather Regular
+https://github.com/SorkinType/Merriweather
+Copyright 2016 The Merriweather Project Authors (https://github.com/SorkinType/Merriweather)
+License: SIL Open Font License, Version 1.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+EBGaramond-Regular.ttf — EB Garamond Regular
+https://github.com/georgd/EB-Garamond
+Copyright 2017 The EB Garamond Authors (https://github.com/georgd/EB-Garamond)
+License: SIL Open Font License, Version 1.1
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+OpenDyslexic-Regular.ttf — OpenDyslexic Regular
+https://github.com/antijingoist/open-dyslexic
+Copyright 2019 Abbie Gonzalez (https://abbiecod.es)
+License: SIL Open Font License, Version 1.1
+--------------------------------------------------------------------------------

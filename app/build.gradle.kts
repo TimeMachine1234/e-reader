@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,10 @@ plugins {
     alias(libs.plugins.protobuf)
     id("kotlin-kapt")
 }
+
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties()
+if (keystorePropsFile.exists()) keystoreProps.load(keystorePropsFile.inputStream())
 
 android {
     namespace = "com.pageturn.reader"
@@ -23,10 +29,20 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProps.getProperty("storeFile") ?: "pageturn-release.jks")
+            storePassword = keystoreProps.getProperty("storePassword")
+            keyAlias = keystoreProps.getProperty("keyAlias")
+            keyPassword = keystoreProps.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -25,6 +25,11 @@ data class ReaderTheme(
 
 val READER_THEMES = listOf(
     ReaderTheme("Light",     Color(0xFFFFFFFF), Color(0xFF1A1A1A), Color(0xFF4A90D9)),
+    // A real e-ink display reads as a distinct light *gray*, not bright white.
+    // Warm carbon-gray paper with near-black text to cut glare/eye strain.
+    ReaderTheme("E-Ink",     Color(0xFFC7C4BB), Color(0xFF1A1917), Color(0xFF565650)),
+    // Warmer, amber-tinted paper for low-light / stronger blue-light reduction.
+    ReaderTheme("E-Ink Warm", Color(0xFFD3C9B4), Color(0xFF221E17), Color(0xFF7A6A4E)),
     ReaderTheme("Sepia",     Color(0xFFF5ECD7), Color(0xFF3B2F1E), Color(0xFF8B5E3C)),
     ReaderTheme("Dark",      Color(0xFF1C1C1E), Color(0xFFE5E5E7), Color(0xFF5E9FE0)),
     ReaderTheme("AMOLED",    Color(0xFF000000), Color(0xFFFFFFFF), Color(0xFF5E9FE0)),

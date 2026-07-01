@@ -18,7 +18,6 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import android.util.LruCache
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,7 +32,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -41,13 +39,49 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.unit.dp
 import com.pageturn.domain.model.Book
 import com.pageturn.domain.model.ReaderSettings
+import com.pageturn.ui.theme.readerThemeByName
 import java.io.File
+
+/**
+ * Builds a draw-time color filter that re-themes a rendered (white-bg/black-text)
+ * PDF page:
+ *  - near-white themes  → no filter (original)
+ *  - dark themes        → invert (dark background, light text)
+ *  - light tinted themes → multiply the white background toward the theme color
+ *    while keeping dark text dark (e.g. sepia / warm gray)
+ */
+private fun pdfThemeFilter(themeName: String): ColorFilter? {
+    val bg = readerThemeByName(themeName).backgroundColor
+    val lum = 0.299f * bg.red + 0.587f * bg.green + 0.114f * bg.blue
+    return when {
+        lum > 0.92f -> null
+        lum < 0.5f -> ColorFilter.colorMatrix(
+            ColorMatrix(
+                floatArrayOf(
+                    -1f, 0f, 0f, 0f, 255f,
+                    0f, -1f, 0f, 0f, 255f,
+                    0f, 0f, -1f, 0f, 255f,
+                    0f, 0f, 0f, 1f, 0f
+                )
+            )
+        )
+        else -> ColorFilter.colorMatrix(
+            ColorMatrix(
+                floatArrayOf(
+                    bg.red, 0f, 0f, 0f, 0f,
+                    0f, bg.green, 0f, 0f, 0f,
+                    0f, 0f, bg.blue, 0f, 0f,
+                    0f, 0f, 0f, 1f, 0f
+                )
+            )
+        )
+    }
+}
 
 @Composable
 fun PdfReader(
@@ -91,12 +125,15 @@ fun PdfReader(
         return
     }
 
+    val colorFilter = pdfThemeFilter(readerSettings.theme)
+
     if (readerSettings.paginateMode) {
         PaginatedPdfReader(
             filePath = book.filePath,
             pageCount = pageCount,
             currentPage = currentPage,
             onPageChange = onPageChange,
+            colorFilter = colorFilter,
             modifier = modifier
         )
     } else {
@@ -105,6 +142,7 @@ fun PdfReader(
             pageCount = pageCount,
             currentPage = currentPage,
             onPageChange = onPageChange,
+            colorFilter = colorFilter,
             modifier = modifier
         )
     }
@@ -116,6 +154,7 @@ private fun PaginatedPdfReader(
     pageCount: Int,
     currentPage: Int,
     onPageChange: (Int) -> Unit,
+    colorFilter: ColorFilter? = null,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(
@@ -123,42 +162,26 @@ private fun PaginatedPdfReader(
         pageCount = { pageCount }
     )
 
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
-
+    // Report swipes outward…
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { page ->
             onPageChange(page)
         }
     }
+    // …and follow external page changes (tap zones, volume buttons, scrubber).
+    LaunchedEffect(currentPage) {
+        val target = currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+        if (target != pagerState.currentPage) pagerState.animateScrollToPage(target)
+    }
 
     HorizontalPager(
         state = pagerState,
-        modifier = modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 5f)
-                    if (scale > 1f) {
-                        offsetX += pan.x
-                        offsetY += pan.y
-                    } else {
-                        offsetX = 0f
-                        offsetY = 0f
-                    }
-                }
-            }
-            .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
-                translationX = offsetX,
-                translationY = offsetY
-            )
+        modifier = modifier.fillMaxSize()
     ) { page ->
         PdfPageView(
             filePath = filePath,
             pageIndex = page,
+            colorFilter = colorFilter,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -170,15 +193,12 @@ private fun ScrollingPdfReader(
     pageCount: Int,
     currentPage: Int,
     onPageChange: (Int) -> Unit,
+    colorFilter: ColorFilter? = null,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
     )
-
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex }.collect { index ->
@@ -188,26 +208,7 @@ private fun ScrollingPdfReader(
 
     LazyColumn(
         state = listState,
-        modifier = modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 5f)
-                    if (scale > 1f) {
-                        offsetX += pan.x
-                        offsetY += pan.y
-                    } else {
-                        offsetX = 0f
-                        offsetY = 0f
-                    }
-                }
-            }
-            .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
-                translationX = offsetX,
-                translationY = offsetY
-            )
+        modifier = modifier.fillMaxSize()
     ) {
         itemsIndexed(
             items = List(pageCount) { it }
@@ -215,6 +216,7 @@ private fun ScrollingPdfReader(
             PdfPageView(
                 filePath = filePath,
                 pageIndex = pageIndex,
+                colorFilter = colorFilter,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)

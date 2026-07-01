@@ -44,6 +44,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedTextField
+import com.pageturn.domain.model.Book
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -98,6 +100,7 @@ fun LibraryScreen(
 
     var showSortMenu by remember { mutableStateOf(false) }
     var showFilterSheet by rememberSaveable { mutableStateOf(false) }
+    var renamingBook by remember { mutableStateOf<Book?>(null) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val searchFocusRequester = remember { FocusRequester() }
 
@@ -198,6 +201,7 @@ fun LibraryScreen(
                         },
                         onToggleFavorite = viewModel::toggleFavorite,
                         onMarkFinished = viewModel::markFinished,
+                        onRename = { book -> renamingBook = book },
                         onDelete = { book -> viewModel.deleteBook(book.id) },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -238,6 +242,39 @@ fun LibraryScreen(
             },
             dismissButton = {
                 TextButton(onClick = viewModel::onDuplicateCancel) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // Rename book dialog
+    renamingBook?.let { book ->
+        var newTitle by remember(book.id) { mutableStateOf(book.title) }
+        AlertDialog(
+            onDismissRequest = { renamingBook = null },
+            title = { Text(stringResource(R.string.book_action_rename)) },
+            text = {
+                OutlinedTextField(
+                    value = newTitle,
+                    onValueChange = { newTitle = it },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.rename_title_label)) }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.renameBook(book, newTitle)
+                        renamingBook = null
+                    },
+                    enabled = newTitle.isNotBlank()
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { renamingBook = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }

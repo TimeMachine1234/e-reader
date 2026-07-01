@@ -42,6 +42,8 @@
     <string name="book_action_mark_favorite">Mark as Favorite</string>
     <string name="book_action_remove_favorite">Remove from Favorites</string>
     <string name="book_action_mark_finished">Mark as Finished</string>
+    <string name="book_action_rename">Rename</string>
+    <string name="rename_title_label">Title</string>
     <string name="book_action_mark_unread">Mark as Unread</string>
     <string name="book_action_delete">Delete Book</string>
     <string name="book_added">Book added</string>

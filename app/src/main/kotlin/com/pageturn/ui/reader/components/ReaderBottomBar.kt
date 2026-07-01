@@ -42,6 +42,8 @@ import kotlin.math.roundToInt
 fun ReaderBottomBar(
     currentPage: Int,
     totalPages: Int,
+    displayPage: Int,
+    displayPageCount: Int,
     progressPercent: Float,
     currentChapter: String,
     readerSettings: ReaderSettings,
@@ -57,30 +59,36 @@ fun ReaderBottomBar(
             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        Text(
-            text = currentChapter,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.fillMaxWidth()
-        )
+        if (readerSettings.showChapterProgress) {
+            Text(
+                text = currentChapter,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
-        Slider(
-            value = sliderValue.coerceIn(0f, 1f),
-            onValueChange = { sliderValue = it },
-            onValueChangeFinished = { onPageScrub(sliderValue) },
-            modifier = Modifier.fillMaxWidth()
-        )
+        if (readerSettings.showProgressBar) {
+            Slider(
+                value = sliderValue.coerceIn(0f, 1f),
+                onValueChange = { sliderValue = it },
+                onValueChangeFinished = { onPageScrub(sliderValue) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            val pageText = if (totalPages > 0) {
-                "Page $currentPage of $totalPages"
-            } else {
-                "${(progressPercent * 100).roundToInt()}% read"
+            val pageText = when {
+                // EPUB pager reports the page within the current chapter.
+                displayPageCount > 0 -> "Page $displayPage of $displayPageCount"
+                // PDF / comics: currentPage is 0-based.
+                totalPages > 0 -> "Page ${currentPage + 1} of $totalPages"
+                else -> "${(progressPercent * 100).roundToInt()}% read"
             }
             Text(
                 text = pageText,

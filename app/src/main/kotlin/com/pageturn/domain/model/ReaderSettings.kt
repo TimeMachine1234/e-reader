@@ -36,7 +36,10 @@ data class ReaderSettings(
     val showTimeRemaining: Boolean = true,
     val keepScreenAwake: Boolean = true,
     val volumeButtonPageTurn: Boolean = true,
-    val tapZoneLayout: String = "sides"
+    val tapZoneLayout: String = "sides",
+    val dualPageLandscape: Boolean = false,
+    val blinkReminder: Boolean = false,
+    val blinkIntervalSec: Int = 60
 ) {
     companion object {
         val FONT_FAMILIES = listOf(

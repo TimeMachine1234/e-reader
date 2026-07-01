@@ -18,7 +18,6 @@ import android.annotation.SuppressLint
 import android.util.Log
 import android.view.View
 import android.webkit.ConsoleMessage
-import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -26,13 +25,18 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.coroutines.delay
 import com.pageturn.domain.model.Book
 import com.pageturn.domain.model.Highlight
 import com.pageturn.domain.model.ReaderSettings
@@ -58,6 +62,12 @@ private class EpubPagerState {
     // onPageFinished (a long-lived closure) never injects stale config.
     @Volatile var settings: ReaderSettings = ReaderSettings()
     @Volatile var highlights: List<Highlight> = emptyList()
+    // Status-bar height (dp) so text can clear the notification icons in the
+    // immersive reader. Kept current for the onPageFinished closure.
+    @Volatile var topInsetDp: Int = 0
+    // Within-chapter position (0..1) to restore on the first chapter load only;
+    // -1 means "no restore" (start at page 0 or last page).
+    @Volatile var restoreFrac: Float = -1f
 }
 
 private const val EPUB_SCHEME = "https://epub.local/"
@@ -75,11 +85,17 @@ fun EpubReader(
     var webView by remember { mutableStateOf<WebView?>(null) }
     var currentSpineIndex by remember { mutableStateOf(0) }
     val pagerState = remember { EpubPagerState() }
+    var lastAppliedSettings by remember { mutableStateOf<ReaderSettings?>(null) }
+
+    // Status-bar height in dp (≈ CSS px in the WebView) to clear notification icons.
+    val density = LocalDensity.current
+    val topInsetDp = (WindowInsets.statusBars.getTop(density) / density.density).toInt()
 
     // Keep the holder in sync so the WebViewClient closures read live config.
     SideEffect {
         pagerState.settings = uiState.readerSettings
         pagerState.highlights = uiState.highlights
+        pagerState.topInsetDp = topInsetDp
     }
 
     // Parse EPUB in background on first load
@@ -119,6 +135,12 @@ fun EpubReader(
         val wv = webView ?: return@LaunchedEffect
         val targetIndex = uiState.currentPage.coerceIn(0, eb.spine.size() - 1)
         currentSpineIndex = targetIndex
+        // Restore the exact within-chapter position saved last time (stored as
+        // "f:<0..1>" in the book's currentCfi).
+        pagerState.restoreFrac = book.currentCfi
+            ?.removePrefix("f:")?.toFloatOrNull()
+            ?.takeIf { book.currentCfi?.startsWith("f:") == true }
+            ?: -1f
         loadSpineItem(wv, eb, targetIndex)
     }
 
@@ -133,17 +155,34 @@ fun EpubReader(
         }
     }
 
-    // Re-apply typography + relayout pages whenever settings change
+    // React to settings changes while reading.
     LaunchedEffect(uiState.readerSettings, epubBook) {
         val wv = webView ?: return@LaunchedEffect
         if (epubBook == null) return@LaunchedEffect
-        wv.evaluateJavascript(buildCssInjectionJs(uiState.readerSettings), null)
-        wv.evaluateJavascript(buildPagerJs(uiState.readerSettings, startAtLast = false), null)
+        val settings = uiState.readerSettings
+        val prev = lastAppliedSettings
+        lastAppliedSettings = settings
+        // Initial layout is handled by onPageFinished; only act on real changes.
+        if (prev == null) return@LaunchedEffect
+        wv.evaluateJavascript(buildCssInjectionJs(settings), null)
+        wv.evaluateJavascript(buildPagerJs(settings, startAtLast = false, pagerState.topInsetDp), null)
     }
 
     // Re-inject highlights whenever the list changes
     LaunchedEffect(uiState.highlights) {
         webView?.evaluateJavascript(buildHighlightInjectionJs(uiState.highlights), null)
+    }
+
+    // Re-lay out on rotation so the new viewport size is used (and "two pages in
+    // landscape" engages). The WebView's own resize event is unreliable through
+    // Compose, so we drive it here after the view has settled into its new size.
+    val orientation = LocalConfiguration.current.orientation
+    LaunchedEffect(orientation) {
+        val wv = webView ?: return@LaunchedEffect
+        if (epubBook == null) return@LaunchedEffect
+        delay(200)
+        wv.evaluateJavascript(buildCssInjectionJs(pagerState.settings), null)
+        wv.evaluateJavascript(buildPagerJs(pagerState.settings, startAtLast = false, pagerState.topInsetDp), null)
     }
 
     AndroidView(
@@ -161,6 +200,11 @@ fun EpubReader(
                     builtInZoomControls = false
                     displayZoomControls = false
                     setSupportZoom(false)
+                    // Lock the viewport to the actual view width so rotating the
+                    // device never auto-scales the text up or down.
+                    useWideViewPort = false
+                    loadWithOverviewMode = false
+                    textZoom = 100
                 }
                 webViewClient = object : WebViewClient() {
                     override fun shouldInterceptRequest(
@@ -204,10 +248,15 @@ fun EpubReader(
                         super.onPageFinished(view, url)
                         val startAtLast = pagerState.openAtLastPage
                         pagerState.openAtLastPage = false
+                        // Restore-fraction applies to the first chapter load only.
+                        val restoreFrac = pagerState.restoreFrac
+                        pagerState.restoreFrac = -1f
                         val settings = pagerState.settings
                         view.evaluateJavascript(buildCssInjectionJs(settings), null)
                         view.evaluateJavascript(buildHighlightInjectionJs(pagerState.highlights), null)
-                        view.evaluateJavascript(buildPagerJs(settings, startAtLast), null)
+                        view.evaluateJavascript(
+                            buildPagerJs(settings, startAtLast, pagerState.topInsetDp, restoreFrac), null
+                        )
                         view.evaluateJavascript(buildTextSelectionJs(), null)
                     }
                 }
@@ -290,7 +339,7 @@ private fun buildCssInjectionJs(settings: ReaderSettings): String {
     val css = """
         $fontFace
         html { background-color: $bg !important; }
-        body {
+        body, #pt-curl-inner {
             font-family: $fontFamilyValue !important;
             font-size: ${settings.fontSizeSp}px !important;
             line-height: ${settings.lineSpacing} !important;
@@ -338,25 +387,38 @@ private fun jsString(s: String): String =
  * Exposes `window.__ptPager`; reads its live config so re-injecting on a
  * settings change (e.g. switching mode or animation) takes effect immediately.
  */
-private fun buildPagerJs(settings: ReaderSettings, startAtLast: Boolean): String {
+private fun buildPagerJs(
+    settings: ReaderSettings,
+    startAtLast: Boolean,
+    topInsetDp: Int = 0,
+    startFraction: Float = -1f
+): String {
     val h = settings.horizontalMarginDp.coerceAtLeast(0)
     val v = settings.verticalPaddingDp.coerceAtLeast(0)
+    val top = topInsetDp.coerceAtLeast(0)
+    val startFrac = startFraction
     val anim = when (settings.pageTurnAnimation) {
         "fade", "none", "curl" -> settings.pageTurnAnimation
         else -> "slide"
     }
     val mode = if (settings.paginateMode) "page" else "scroll"
     val startLast = if (startAtLast) "true" else "false"
+    val bg = colorToHex(readerThemeByName(settings.theme).backgroundColor)
+    val cols = settings.columns.coerceIn(1, 2)
+    val tap = if (settings.tapZoneLayout == "thirds") "thirds" else "sides"
+    val dual = if (settings.dualPageLandscape) "true" else "false"
 
     return """
 (function(){
  try {
   var pager = window.__ptPager || {};
   window.__ptPager = pager;
-  pager.H = $h; pager.V = $v; pager.ANIM = '$anim'; pager.MODE = '$mode';
+  pager.H = $h; pager.V = $v; pager.ANIM = '$anim'; pager.MODE = '$mode'; pager.BG = '$bg';
+  pager.COLS = $cols; pager.TAP = '$tap'; pager.DUAL = $dual; pager.TOP = $top;
   if(typeof pager.current !== 'number') pager.current = 0;
   var firstInit = !pager.__init;
   var startLast = $startLast;
+  var startFraction = $startFrac;
 
   function vw(){ return window.innerWidth; }
   function vh(){ return window.innerHeight; }
@@ -365,23 +427,30 @@ private fun buildPagerJs(settings: ReaderSettings, startAtLast: Boolean): String
   function styleEl(id){ var s=document.getElementById(id); if(!s){s=document.createElement('style');s.id=id;document.head.appendChild(s);} return s; }
 
   pager.applyLayout = function(){
-    var H=pager.H, V=pager.V;
+    var H=pager.H, V=pager.V, TOP=(pager.TOP||0)+V;
     if(pager.MODE==='scroll'){
       styleEl('pt-pager-style').textContent =
         'html{margin:0!important;padding:0!important;height:auto!important;overflow-x:hidden!important;overflow-y:auto!important;perspective:none!important;}'+
-        'body{margin:0!important;box-sizing:border-box!important;padding:'+V+'px '+H+'px!important;'+
+        'body{margin:0!important;box-sizing:border-box!important;padding:'+TOP+'px '+H+'px '+V+'px '+H+'px!important;'+
         'height:auto!important;width:auto!important;column-width:auto!important;-webkit-column-width:auto!important;columns:auto!important;'+
         'overflow:visible!important;transform:none!important;touch-action:auto!important;}'+
         'img,svg,table{max-width:100%!important;height:auto!important;}pre{white-space:pre-wrap!important;}';
     } else {
-      var colW=Math.max(1, vw()-2*H);
+      // column-count = COLS text columns per screen. With a uniform gap this
+      // keeps the page pitch exactly one viewport wide (scrollLeft = page*vw),
+      // so 1-column and 2-column layouts both paginate cleanly.
+      // "Two pages in landscape" forces a 2-up spread when the screen is wider
+      // than it is tall (re-evaluated on rotation via relayout).
+      var C = (pager.DUAL && vw()>vh()) ? 2 : (pager.COLS||1);
       var maxImg=Math.max(1, vh()-2*V);
+      // width:auto keeps the body equal to the live viewport, so rotating never
+      // leaves a stale wide layout that the WebView would scale down to fit.
       styleEl('pt-pager-style').textContent =
         'html{margin:0!important;padding:0!important;height:'+vh()+'px!important;overflow:hidden!important;perspective:1600px!important;}'+
-        'body{margin:0!important;box-sizing:border-box!important;padding:'+V+'px '+H+'px!important;'+
+        'body{margin:0!important;box-sizing:border-box!important;padding:'+TOP+'px '+H+'px '+V+'px '+H+'px!important;'+
         'height:'+vh()+'px!important;width:auto!important;'+
-        'column-width:'+colW+'px!important;column-gap:'+(2*H)+'px!important;column-fill:auto!important;'+
-        '-webkit-column-width:'+colW+'px!important;-webkit-column-gap:'+(2*H)+'px!important;'+
+        'column-count:'+C+'!important;column-gap:'+(2*H)+'px!important;column-fill:auto!important;'+
+        '-webkit-column-count:'+C+'!important;-webkit-column-gap:'+(2*H)+'px!important;'+
         'overflow-x:auto!important;overflow-y:hidden!important;touch-action:none!important;backface-visibility:hidden;}'+
         'body::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}'+
         'img,svg,table{max-width:100%!important;max-height:'+maxImg+'px!important;height:auto!important;}pre{white-space:pre-wrap!important;}';
@@ -457,7 +526,11 @@ private fun buildPagerJs(settings: ReaderSettings, startAtLast: Boolean): String
 
   pager.applyLayout();
   requestAnimationFrame(function(){ requestAnimationFrame(function(){
-    if(firstInit){ var t=pager.total(); pager.current = startLast ? (t-1) : 0; }
+    if(firstInit){
+      var t=pager.total();
+      if(startFraction >= 0) pager.current = Math.round(startFraction*(t-1));
+      else pager.current = startLast ? (t-1) : 0;
+    }
     if(pager.MODE==='scroll'){ window.scrollTo({top: pager.current*vh(), behavior:'auto'}); pager.report(); }
     else { pager.renderPage(pager.current, false); }
   }); });
@@ -493,8 +566,11 @@ private fun buildPagerJs(settings: ReaderSettings, startAtLast: Boolean): String
         var x=t.clientX, y=t.clientY, w=vw(), hh=vh();
         // Bottom-left corner always reveals the bars (progress + settings access).
         if(x < w*0.22 && y > hh*0.78){ if(window.Android && Android.onTap) Android.onTap(x, y); return; }
-        if(x < w*0.30) pager.prev();
-        else if(x > w*0.70) pager.next();
+        // Tap-zone widths depend on the chosen layout.
+        var left = (pager.TAP==='thirds') ? 0.3333 : 0.25;
+        var right = (pager.TAP==='thirds') ? 0.6667 : 0.75;
+        if(x < w*left) pager.prev();
+        else if(x > w*right) pager.next();
         else if(window.Android && Android.onTap) Android.onTap(x, y);
       }
     }, {passive:false});
@@ -516,7 +592,7 @@ private fun buildPagerJs(settings: ReaderSettings, startAtLast: Boolean): String
 }
 
 private fun buildHighlightInjectionJs(highlights: List<Highlight>): String {
-    if (highlights.isEmpty()) return "(function(){})();"
+    val validIds = highlights.joinToString(",") { "\"${it.id}\":1" }
     val highlightCalls = highlights.joinToString("\n") { h ->
         val color = highlightColorToHex(h.color)
         val escapedText = h.selectedText.replace("'", "\\'").replace("\n", " ")
@@ -524,16 +600,26 @@ private fun buildHighlightInjectionJs(highlights: List<Highlight>): String {
     }
     return """
         (function() {
+            var valid = {$validIds};
+            // Remove marks for highlights that were deleted (unwrap them).
+            var marks = document.querySelectorAll('mark[id^="hl-"]');
+            for (var i = marks.length - 1; i >= 0; i--) {
+                var m = marks[i];
+                if (!valid[m.id.substring(3)]) {
+                    var p = m.parentNode;
+                    while (m.firstChild) p.insertBefore(m.firstChild, m);
+                    p.removeChild(m);
+                    if (p.normalize) p.normalize();
+                }
+            }
             function highlightText(id, text, color) {
                 if (!text || text.length === 0) return;
                 var body = document.body;
-                var innerHTML = body.innerHTML;
+                if (document.getElementById('hl-' + id)) return;
                 var escaped = text.replace(/[.*+?^${'$'}{}()|[\]\\]/g, '\\${'$'}&');
                 var regex = new RegExp(escaped, 'g');
-                if (!document.getElementById('hl-' + id)) {
-                    body.innerHTML = innerHTML.replace(regex,
-                        '<mark id="hl-' + id + '" style="background-color:' + color + ';opacity:0.4;">' + text + '</mark>');
-                }
+                body.innerHTML = body.innerHTML.replace(regex,
+                    '<mark id="hl-' + id + '" style="background-color:' + color + ';opacity:0.4;">' + text + '</mark>');
             }
             $highlightCalls
             if (window.__ptPager) window.__ptPager.relayout();

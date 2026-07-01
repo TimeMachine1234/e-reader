@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Star
@@ -84,6 +85,7 @@ fun BookCard(
     onAddToCollection: () -> Unit = {},
     onToggleFavorite: () -> Unit = {},
     onMarkFinished: () -> Unit = {},
+    onRename: () -> Unit = {},
     onDelete: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -245,6 +247,16 @@ fun BookCard(
                 onClick = {
                     showMenu = false
                     onMarkFinished()
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.book_action_rename)) },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Rounded.Edit, contentDescription = null)
+                },
+                onClick = {
+                    showMenu = false
+                    onRename()
                 }
             )
             DropdownMenuItem(

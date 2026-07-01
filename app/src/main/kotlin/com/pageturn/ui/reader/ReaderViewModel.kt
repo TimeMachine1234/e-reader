@@ -43,6 +43,9 @@ data class ReaderUiState(
     val isLoading: Boolean = true,
     val currentPage: Int = 0,
     val totalPages: Int = 0,
+    // 1-based page within the current chapter (EPUB pager). 0 = not reported.
+    val displayPage: Int = 0,
+    val displayPageCount: Int = 0,
     val progressPercent: Float = 0f,
     val currentCfi: String? = null,
     val currentChapter: String = "",
@@ -165,7 +168,10 @@ class ReaderViewModel @Inject constructor(
                         showTimeRemaining = proto.showTimeRemaining,
                         keepScreenAwake = proto.keepScreenAwake,
                         volumeButtonPageTurn = proto.volumeButtonPageTurn,
-                        tapZoneLayout = proto.tapZoneLayout
+                        tapZoneLayout = proto.tapZoneLayout,
+                        dualPageLandscape = proto.dualPageLandscape,
+                        blinkReminder = proto.blinkReminder,
+                        blinkIntervalSec = proto.blinkIntervalSec.coerceIn(20, 300)
                     )
                     _uiState.update { it.copy(readerSettings = settings) }
                 }
@@ -241,13 +247,22 @@ class ReaderViewModel @Inject constructor(
      * Combines the chapter index with the in-chapter fraction for an overall percent.
      */
     fun onChapterPageInfo(pageInChapter: Int, pagesInChapter: Int) {
+        // Position within the chapter (0..1), stored so we can reopen exactly here.
+        val within = if (pagesInChapter > 1)
+            (pageInChapter.toFloat() / (pagesInChapter - 1)).coerceIn(0f, 1f) else 0f
         _uiState.update { state ->
             val chapters = state.totalPages.coerceAtLeast(1)
             val frac = if (pagesInChapter > 0)
                 (pageInChapter.toFloat() / pagesInChapter).coerceIn(0f, 1f) else 0f
             val progress = ((state.currentPage + frac) / chapters).coerceIn(0f, 1f)
-            state.copy(progressPercent = progress)
+            state.copy(
+                progressPercent = progress,
+                displayPage = pageInChapter + 1,
+                displayPageCount = pagesInChapter,
+                currentCfi = "f:$within"
+            )
         }
+        saveProgressNow()
     }
 
     fun onTotalPagesResolved(total: Int) {
@@ -445,5 +460,8 @@ class ReaderViewModel @Inject constructor(
     fun updateKeepScreenAwake(k: Boolean) = viewModelScope.launch { readerSettingsDataStore.updateKeepScreenAwake(k) }
     fun updateVolumeButtonPageTurn(v: Boolean) = viewModelScope.launch { readerSettingsDataStore.updateVolumeButtonPageTurn(v) }
     fun updateTapZoneLayout(t: String) = viewModelScope.launch { readerSettingsDataStore.updateTapZoneLayout(t) }
+    fun updateDualPageLandscape(e: Boolean) = viewModelScope.launch { readerSettingsDataStore.updateDualPageLandscape(e) }
+    fun updateBlinkReminder(e: Boolean) = viewModelScope.launch { readerSettingsDataStore.updateBlinkReminder(e) }
+    fun updateBlinkInterval(s: Int) = viewModelScope.launch { readerSettingsDataStore.updateBlinkIntervalSec(s) }
     fun resetSettings() = viewModelScope.launch { readerSettingsDataStore.resetToDefaults() }
 }

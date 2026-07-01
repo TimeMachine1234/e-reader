@@ -27,4 +27,7 @@ message ReaderSettings {
   bool keep_screen_awake = 20;
   bool volume_button_page_turn = 21;
   string tap_zone_layout = 22;
+  bool dual_page_landscape = 23;
+  bool blink_reminder = 24;
+  int32 blink_interval_sec = 25;
 }

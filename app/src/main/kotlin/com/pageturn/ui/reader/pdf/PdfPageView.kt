@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -38,7 +39,8 @@ import java.io.File
 fun PdfPageView(
     filePath: String,
     pageIndex: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    colorFilter: ColorFilter? = null
 ) {
     val context = LocalContext.current
     val density = context.resources.displayMetrics.density
@@ -88,6 +90,7 @@ fun PdfPageView(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = "Page $pageIndex",
                 contentScale = ContentScale.Fit,
+                colorFilter = colorFilter,
                 modifier = Modifier.fillMaxWidth()
             )
         } else {

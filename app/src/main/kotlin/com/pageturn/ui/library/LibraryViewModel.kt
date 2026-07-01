@@ -188,6 +188,14 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    fun renameBook(book: Book, newTitle: String) {
+        val trimmed = newTitle.trim()
+        if (trimmed.isEmpty() || trimmed == book.title) return
+        viewModelScope.launch {
+            bookRepository.updateBook(book.copy(title = trimmed))
+        }
+    }
+
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }

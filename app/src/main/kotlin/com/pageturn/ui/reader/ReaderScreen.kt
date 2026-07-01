@@ -26,6 +26,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,15 +35,24 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -122,6 +132,21 @@ fun ReaderScreen(
         }
     }
 
+    // Blink reminder — a soft cue on an interval, since screen reading suppresses
+    // blinking. The brief dim itself gives the eyes a micro-rest.
+    var showBlink by remember { mutableStateOf(false) }
+    val blinkOn = uiState.readerSettings.blinkReminder && uiState.book != null
+    LaunchedEffect(blinkOn, uiState.readerSettings.blinkIntervalSec) {
+        if (!blinkOn) return@LaunchedEffect
+        val intervalMs = uiState.readerSettings.blinkIntervalSec.coerceIn(20, 300) * 1000L
+        while (true) {
+            delay(intervalMs)
+            showBlink = true
+            delay(1300)
+            showBlink = false
+        }
+    }
+
     val theme = readerThemeByName(uiState.readerSettings.theme)
 
     Box(
@@ -129,7 +154,11 @@ fun ReaderScreen(
             .fillMaxSize()
             .background(theme.backgroundColor)
             .onKeyEvent { keyEvent ->
-                if (uiState.readerSettings.volumeButtonPageTurn) {
+                // A physical key press emits both ACTION_DOWN and ACTION_UP; only
+                // act on the down event so a single press turns exactly one page.
+                if (uiState.readerSettings.volumeButtonPageTurn &&
+                    keyEvent.nativeKeyEvent.action == KeyEvent.ACTION_DOWN
+                ) {
                     when (keyEvent.nativeKeyEvent.keyCode) {
                         KeyEvent.KEYCODE_VOLUME_DOWN -> {
                             viewModel.onPageChange(uiState.currentPage + 1, uiState.currentCfi)
@@ -224,6 +253,8 @@ fun ReaderScreen(
                     ReaderBottomBar(
                         currentPage = uiState.currentPage,
                         totalPages = uiState.totalPages,
+                        displayPage = uiState.displayPage,
+                        displayPageCount = uiState.displayPageCount,
                         progressPercent = uiState.progressPercent,
                         currentChapter = uiState.currentChapter,
                         readerSettings = uiState.readerSettings,
@@ -239,6 +270,7 @@ fun ReaderScreen(
                 if (uiState.isSettingsOpen) {
                     SettingsDrawer(
                         settings = uiState.readerSettings,
+                        format = book.format,
                         onClose = { viewModel.closeSettings() },
                         onFontSizeChange = { viewModel.updateFontSize(it) },
                         onFontFamilyChange = { viewModel.updateFontFamily(it) },
@@ -252,12 +284,15 @@ fun ReaderScreen(
                         onVerticalPaddingChange = { viewModel.updateVerticalPadding(it) },
                         onColumnsChange = { viewModel.updateColumns(it) },
                         onPaginateModeChange = { viewModel.updatePaginateMode(it) },
+                        onDualPageLandscapeChange = { viewModel.updateDualPageLandscape(it) },
                         onPageTurnAnimationChange = { viewModel.updatePageTurnAnimation(it) },
                         onBrightnessChange = { viewModel.updateBrightness(it) },
                         onShowProgressBarChange = { viewModel.updateShowProgressBar(it) },
                         onShowChapterProgressChange = { viewModel.updateShowChapterProgress(it) },
                         onShowTimeRemainingChange = { viewModel.updateShowTimeRemaining(it) },
                         onKeepScreenAwakeChange = { viewModel.updateKeepScreenAwake(it) },
+                        onBlinkReminderChange = { viewModel.updateBlinkReminder(it) },
+                        onBlinkIntervalChange = { viewModel.updateBlinkInterval(it) },
                         onVolumeButtonPageTurnChange = { viewModel.updateVolumeButtonPageTurn(it) },
                         onTapZoneLayoutChange = { viewModel.updateTapZoneLayout(it) },
                         onResetDefaults = { viewModel.resetSettings() },
@@ -326,6 +361,31 @@ fun ReaderScreen(
                         onDismiss = { viewModel.dismissHighlightMenu() }
                     )
                 }
+            }
+        }
+
+        // Blink reminder cue — a gentle dim + prompt (non-blocking).
+        AnimatedVisibility(
+            visible = showBlink,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "👁  Blink",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.Black.copy(alpha = 0.6f))
+                        .padding(horizontal = 24.dp, vertical = 14.dp)
+                )
             }
         }
     }
@@ -553,14 +613,26 @@ private fun HighlightsPanel(
             if (highlights.isEmpty()) {
                 Text("No highlights yet")
             } else {
-                androidx.compose.foundation.layout.Column {
+                Column {
                     highlights.forEach { highlight ->
-                        Text(
-                            text = highlight.selectedText,
-                            maxLines = 2,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = highlight.selectedText,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = { onDelete(highlight.id) }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Delete,
+                                    contentDescription = "Delete highlight",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
                     }
                 }
             }

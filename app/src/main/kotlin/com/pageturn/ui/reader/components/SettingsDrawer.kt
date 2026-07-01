@@ -83,6 +83,7 @@ private val TAP_ZONE_LAYOUTS = listOf(
 @Composable
 fun SettingsDrawer(
     settings: ReaderSettings,
+    format: String = "epub",
     onFontFamilyChange: (String) -> Unit,
     onFontSizeChange: (Float) -> Unit,
     onLineSpacingChange: (Float) -> Unit,
@@ -94,6 +95,7 @@ fun SettingsDrawer(
     onVerticalPaddingChange: (Int) -> Unit,
     onColumnsChange: (Int) -> Unit,
     onPaginateModeChange: (Boolean) -> Unit,
+    onDualPageLandscapeChange: (Boolean) -> Unit,
     onPageTurnAnimationChange: (String) -> Unit,
     onThemeChange: (String) -> Unit,
     onCustomBgColorChange: (String) -> Unit,
@@ -103,12 +105,31 @@ fun SettingsDrawer(
     onShowChapterProgressChange: (Boolean) -> Unit,
     onShowTimeRemainingChange: (Boolean) -> Unit,
     onKeepScreenAwakeChange: (Boolean) -> Unit,
+    onBlinkReminderChange: (Boolean) -> Unit,
+    onBlinkIntervalChange: (Int) -> Unit,
     onVolumeButtonPageTurnChange: (Boolean) -> Unit,
     onTapZoneLayoutChange: (String) -> Unit,
     onResetDefaults: () -> Unit,
     isLandscape: Boolean = false,
     onClose: () -> Unit = {}
 ) {
+    // Which settings actually affect each format. Hiding the rest avoids
+    // confusing the reader with controls that do nothing for the open file.
+    val fmt = format.lowercase()
+    val isEpub = fmt == "epub"
+    val isPdf = fmt == "pdf"
+    val isTxt = fmt == "txt"
+    val supportsTypography = isEpub || isTxt          // font size, spacing, justify, bold
+    val supportsFontFamily = isEpub                   // bundled @font-face fonts
+    val supportsMargins = isEpub || isTxt             // page margins/padding
+    val supportsReadMode = isEpub || isPdf            // paginate vs scroll
+    val supportsColumns = isEpub
+    val supportsDualPage = isEpub
+    val supportsAnimation = isEpub
+    val supportsTheme = isEpub || isPdf || isTxt      // not comics (raw images)
+    val supportsLayoutSection = supportsMargins || supportsReadMode ||
+        supportsColumns || supportsDualPage || supportsAnimation
+
     val panelContent: @Composable () -> Unit = {
         Column(
             modifier = Modifier
@@ -137,145 +158,166 @@ fun SettingsDrawer(
             HorizontalDivider()
 
             // Typography Section
-            SectionHeader("Typography")
+            if (supportsTypography) {
+                SectionHeader("Typography")
 
-            // Font family chips
-            SettingLabel("Font Family")
-            Row(
-                modifier = Modifier
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
-                FONT_FAMILIES.forEach { (key, label) ->
-                    FilterChip(
-                        selected = settings.fontFamily == key,
-                        onClick = { onFontFamilyChange(key) },
-                        label = {
-                            Text(
-                                text = label,
-                                fontFamily = when (key) {
-                                    "georgia", "merriweather", "eb_garamond", "palatino" -> FontFamily.Serif
-                                    else -> FontFamily.Default
-                                }
+                if (supportsFontFamily) {
+                    // Font family chips
+                    SettingLabel("Font Family")
+                    Row(
+                        modifier = Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    ) {
+                        FONT_FAMILIES.forEach { (key, label) ->
+                            FilterChip(
+                                selected = settings.fontFamily == key,
+                                onClick = { onFontFamilyChange(key) },
+                                label = {
+                                    Text(
+                                        text = label,
+                                        fontFamily = when (key) {
+                                            "georgia", "merriweather", "eb_garamond", "palatino" -> FontFamily.Serif
+                                            else -> FontFamily.Default
+                                        }
+                                    )
+                                },
+                                modifier = Modifier.padding(end = 8.dp)
                             )
-                        },
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
+                        }
+                    }
                 }
+
+                SliderSettingRow(
+                    label = "Font Size",
+                    value = settings.fontSizeSp,
+                    valueRange = 12f..36f,
+                    steps = 24,
+                    displayText = "${settings.fontSizeSp.roundToInt()}sp",
+                    onValueChangeFinished = onFontSizeChange
+                )
+
+                SliderSettingRow(
+                    label = "Line Spacing",
+                    value = settings.lineSpacing,
+                    valueRange = 1f..2.5f,
+                    steps = 0,
+                    displayText = "%.1f".format(settings.lineSpacing),
+                    onValueChangeFinished = onLineSpacingChange
+                )
+
+                SliderSettingRow(
+                    label = "Letter Spacing",
+                    value = settings.letterSpacing,
+                    valueRange = -1f..5f,
+                    steps = 0,
+                    displayText = "%.1f".format(settings.letterSpacing),
+                    onValueChangeFinished = onLetterSpacingChange
+                )
+
+                SliderSettingRow(
+                    label = "Paragraph Spacing",
+                    value = settings.paragraphSpacing,
+                    valueRange = 0f..32f,
+                    steps = 0,
+                    displayText = "${settings.paragraphSpacing.roundToInt()}dp",
+                    onValueChangeFinished = onParagraphSpacingChange
+                )
+
+                SwitchSettingRow(
+                    label = "Justify Text",
+                    checked = settings.justifyText,
+                    onCheckedChange = onJustifyTextChange
+                )
+
+                SwitchSettingRow(
+                    label = "Bold Text",
+                    checked = settings.boldText,
+                    onCheckedChange = onBoldTextChange
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
             }
-
-            SliderSettingRow(
-                label = "Font Size",
-                value = settings.fontSizeSp,
-                valueRange = 12f..36f,
-                steps = 24,
-                displayText = "${settings.fontSizeSp.roundToInt()}sp",
-                onValueChangeFinished = onFontSizeChange
-            )
-
-            SliderSettingRow(
-                label = "Line Spacing",
-                value = settings.lineSpacing,
-                valueRange = 1f..2.5f,
-                steps = 0,
-                displayText = "%.1f".format(settings.lineSpacing),
-                onValueChangeFinished = onLineSpacingChange
-            )
-
-            SliderSettingRow(
-                label = "Letter Spacing",
-                value = settings.letterSpacing,
-                valueRange = -1f..5f,
-                steps = 0,
-                displayText = "%.1f".format(settings.letterSpacing),
-                onValueChangeFinished = onLetterSpacingChange
-            )
-
-            SliderSettingRow(
-                label = "Paragraph Spacing",
-                value = settings.paragraphSpacing,
-                valueRange = 0f..32f,
-                steps = 0,
-                displayText = "${settings.paragraphSpacing.roundToInt()}dp",
-                onValueChangeFinished = onParagraphSpacingChange
-            )
-
-            SwitchSettingRow(
-                label = "Justify Text",
-                checked = settings.justifyText,
-                onCheckedChange = onJustifyTextChange
-            )
-
-            SwitchSettingRow(
-                label = "Bold Text",
-                checked = settings.boldText,
-                onCheckedChange = onBoldTextChange
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
             // Layout Section
-            SectionHeader("Layout")
+            if (supportsLayoutSection) {
+                SectionHeader("Layout")
 
-            SliderSettingRow(
-                label = "Horizontal Margin",
-                value = settings.horizontalMarginDp.toFloat(),
-                valueRange = 0f..80f,
-                steps = 0,
-                displayText = "${settings.horizontalMarginDp}dp",
-                onValueChangeFinished = { onHorizontalMarginChange(it.roundToInt()) }
-            )
+                if (supportsMargins) {
+                    SliderSettingRow(
+                        label = "Horizontal Margin",
+                        value = settings.horizontalMarginDp.toFloat(),
+                        valueRange = 0f..80f,
+                        steps = 0,
+                        displayText = "${settings.horizontalMarginDp}dp",
+                        onValueChangeFinished = { onHorizontalMarginChange(it.roundToInt()) }
+                    )
 
-            SliderSettingRow(
-                label = "Vertical Padding",
-                value = settings.verticalPaddingDp.toFloat(),
-                valueRange = 8f..64f,
-                steps = 0,
-                displayText = "${settings.verticalPaddingDp}dp",
-                onValueChangeFinished = { onVerticalPaddingChange(it.roundToInt()) }
-            )
-
-            // Columns segmented button
-            SettingRowContainer(label = "Columns") {
-                SegmentedButtonRow(
-                    options = listOf("1 Col", "2 Col"),
-                    selectedIndex = settings.columns - 1,
-                    onSelect = { onColumnsChange(it + 1) }
-                )
-            }
-
-            // Read mode segmented button
-            SettingRowContainer(label = "Read Mode") {
-                SegmentedButtonRow(
-                    options = listOf("Paginate", "Scroll"),
-                    selectedIndex = if (settings.paginateMode) 0 else 1,
-                    onSelect = { onPaginateModeChange(it == 0) }
-                )
-            }
-
-            // Page turn animation chips
-            SettingLabel("Page Turn Animation")
-            Row(
-                modifier = Modifier
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
-                PAGE_TURN_ANIMATIONS.forEach { (key, label) ->
-                    FilterChip(
-                        selected = settings.pageTurnAnimation == key,
-                        onClick = { onPageTurnAnimationChange(key) },
-                        label = { Text(label) },
-                        modifier = Modifier.padding(end = 8.dp)
+                    SliderSettingRow(
+                        label = "Vertical Padding",
+                        value = settings.verticalPaddingDp.toFloat(),
+                        valueRange = 8f..64f,
+                        steps = 0,
+                        displayText = "${settings.verticalPaddingDp}dp",
+                        onValueChangeFinished = { onVerticalPaddingChange(it.roundToInt()) }
                     )
                 }
-            }
 
-            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+                if (supportsColumns) {
+                    SettingRowContainer(label = "Columns") {
+                        SegmentedButtonRow(
+                            options = listOf("1 Col", "2 Col"),
+                            selectedIndex = settings.columns - 1,
+                            onSelect = { onColumnsChange(it + 1) }
+                        )
+                    }
+                }
+
+                if (supportsReadMode) {
+                    SettingRowContainer(label = "Read Mode") {
+                        SegmentedButtonRow(
+                            options = listOf("Paginate", "Scroll"),
+                            selectedIndex = if (settings.paginateMode) 0 else 1,
+                            onSelect = { onPaginateModeChange(it == 0) }
+                        )
+                    }
+                }
+
+                if (supportsDualPage) {
+                    SwitchSettingRow(
+                        label = "Two Pages in Landscape",
+                        checked = settings.dualPageLandscape,
+                        onCheckedChange = onDualPageLandscapeChange
+                    )
+                }
+
+                if (supportsAnimation) {
+                    // Page turn animation chips
+                    SettingLabel("Page Turn Animation")
+                    Row(
+                        modifier = Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    ) {
+                        PAGE_TURN_ANIMATIONS.forEach { (key, label) ->
+                            FilterChip(
+                                selected = settings.pageTurnAnimation == key,
+                                onClick = { onPageTurnAnimationChange(key) },
+                                label = { Text(label) },
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+            }
 
             // Appearance Section
             SectionHeader("Appearance")
 
             // Theme swatches
+            if (supportsTheme) {
             SettingLabel("Theme")
             Row(
                 modifier = Modifier
@@ -284,22 +326,43 @@ fun SettingsDrawer(
             ) {
                 READER_THEMES.forEach { theme ->
                     val isSelected = settings.theme == theme.name
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(theme.backgroundColor)
-                            .then(
-                                if (isSelected) Modifier.border(
-                                    3.dp,
-                                    MaterialTheme.colorScheme.primary,
-                                    CircleShape
-                                ) else Modifier
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(end = 12.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(theme.backgroundColor)
+                                .then(
+                                    if (isSelected) Modifier.border(
+                                        3.dp,
+                                        MaterialTheme.colorScheme.primary,
+                                        CircleShape
+                                    ) else Modifier
+                                )
+                                .clickable { onThemeChange(theme.name) }
+                        ) {
+                            // Sample letter in the theme's text color, so the swatch
+                            // previews actual contrast (not just the background).
+                            Text(
+                                text = "A",
+                                color = theme.textColor,
+                                style = MaterialTheme.typography.labelLarge
                             )
-                            .clickable { onThemeChange(theme.name) }
-                    )
+                        }
+                        Text(
+                            text = theme.name,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
+            }
             }
 
             // Brightness slider
@@ -342,6 +405,23 @@ fun SettingsDrawer(
                 checked = settings.keepScreenAwake,
                 onCheckedChange = onKeepScreenAwakeChange
             )
+
+            SwitchSettingRow(
+                label = "Blink Reminder",
+                checked = settings.blinkReminder,
+                onCheckedChange = onBlinkReminderChange
+            )
+
+            if (settings.blinkReminder) {
+                SliderSettingRow(
+                    label = "Blink Every",
+                    value = settings.blinkIntervalSec.toFloat(),
+                    valueRange = 20f..180f,
+                    steps = 0,
+                    displayText = "${settings.blinkIntervalSec}s",
+                    onValueChangeFinished = { onBlinkIntervalChange(it.roundToInt()) }
+                )
+            }
 
             SwitchSettingRow(
                 label = "Volume Button Page Turn",

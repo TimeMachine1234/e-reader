@@ -47,6 +47,9 @@ val defaultReaderSettings: ReaderSettings = ReaderSettings.newBuilder()
     .setKeepScreenAwake(true)
     .setVolumeButtonPageTurn(true)
     .setTapZoneLayout("sides")
+    .setDualPageLandscape(false)
+    .setBlinkReminder(false)
+    .setBlinkIntervalSec(60)
     .build()
 
 object ReaderSettingsSerializer : Serializer<ReaderSettings> {
@@ -157,6 +160,18 @@ class ReaderSettingsDataStore @Inject constructor(
 
     suspend fun updateTapZoneLayout(layout: String) {
         dataStore.updateData { it.toBuilder().setTapZoneLayout(layout).build() }
+    }
+
+    suspend fun updateDualPageLandscape(enabled: Boolean) {
+        dataStore.updateData { it.toBuilder().setDualPageLandscape(enabled).build() }
+    }
+
+    suspend fun updateBlinkReminder(enabled: Boolean) {
+        dataStore.updateData { it.toBuilder().setBlinkReminder(enabled).build() }
+    }
+
+    suspend fun updateBlinkIntervalSec(seconds: Int) {
+        dataStore.updateData { it.toBuilder().setBlinkIntervalSec(seconds).build() }
     }
 
     suspend fun resetToDefaults() {

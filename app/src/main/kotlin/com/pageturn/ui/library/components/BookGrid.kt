@@ -49,6 +49,7 @@ fun BookGrid(
     onAddToCollection: (Book) -> Unit,
     onToggleFavorite: (Book) -> Unit,
     onMarkFinished: (Book) -> Unit,
+    onRename: (Book) -> Unit,
     onDelete: (Book) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -69,6 +70,7 @@ fun BookGrid(
                 onAddToCollection = { onAddToCollection(book) },
                 onToggleFavorite = { onToggleFavorite(book) },
                 onMarkFinished = { onMarkFinished(book) },
+                onRename = { onRename(book) },
                 onDelete = { onDelete(book) },
                 modifier = Modifier.animateItemPlacement()
             )
@@ -84,6 +86,7 @@ private fun SwipeToDismissBookCard(
     onAddToCollection: () -> Unit,
     onToggleFavorite: () -> Unit,
     onMarkFinished: () -> Unit,
+    onRename: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -136,6 +139,7 @@ private fun SwipeToDismissBookCard(
             onAddToCollection = onAddToCollection,
             onToggleFavorite = onToggleFavorite,
             onMarkFinished = onMarkFinished,
+            onRename = onRename,
             onDelete = onDelete,
             modifier = Modifier.fillMaxWidth()
         )
